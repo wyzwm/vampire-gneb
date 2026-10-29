@@ -2,13 +2,14 @@
 
 为 **VAMPIRE 7.0.0** 提供 `sim:program=gneb` 扩展入口，计算单位自旋系统的最小能量路径和候选跃迁势垒。
 
-本项目参考 [Spirit 的 GNEB 实现](https://github.com/spirit-code/spirit/blob/e82250d3b14411c2c2fa292d143f13e3e111ad8c/core/src/engine/Method_GNEB.cpp)，以独立 C++11 内核实现球面投影、测地线弹簧、改善切线、爬山像和 FIRE 优化，并直接调用 VAMPIRE 原生的能量与有效场代码。**当前版本仅支持单进程 CPU，是非官方研究扩展。**
+本项目参考 [Spirit 的 GNEB 实现](https://github.com/spirit-code/spirit/blob/e82250d3b14411c2c2fa292d143f13e3e111ad8c/core/src/engine/Method_GNEB.cpp)，以独立 C++11 内核实现球面投影、测地线弹簧、改善切线、爬山像和 FIRE 优化，并直接调用 VAMPIRE 原生的能量与有效场代码。**当前版本为单进程 CPU 非官方研究扩展；0.2 支持自由端点弛豫和可选 OpenMP 原子循环并行。**
 
 |入口|内容|
 |---|---|
 |[安装与编译](docs/INSTALL.md)|Linux / Windows、固定上游版本、构建要求|
 |[如何接入扩展入口](docs/INTEGRATION.md)|新增文件、解析路由、程序ID、调度入口、Makefile|
 |[完整使用说明](docs/USAGE.md)|参数、图像格式、单位、输出和失败判据|
+|[端点弛豫与 CPU 并行](docs/ENDPOINTS.md)|自由端点、OpenMP 支持范围与串并行核验|
 |[公开验证算例](docs/VALIDATION.md)|Spirit 官方16×16斯格明子湮灭测试、出处与验收|
 |[来源与许可证](NOTICES.md)|VAMPIRE GPL/BSD、Spirit MIT、方法引用|
 

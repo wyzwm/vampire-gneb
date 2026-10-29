@@ -10,7 +10,7 @@ def install(source):
     source=Path(source).resolve();manifest=json.loads((ROOT/'upstream.json').read_text());marker=source/'.gneb-extension.json'
     if marker.exists():
         record=json.loads(marker.read_text())
-        if record['patch_sha256']!=manifest['patch_sha256']:raise SystemExit('A different extension version is installed')
+        if record['patch_sha256']!=manifest['patch_sha256'] or record['extension_version']!=manifest['extension_version']:raise SystemExit('A different extension version is installed; use a clean separate checkout')
         for path,digest in record['installed_files'].items():
             if sha(source/path)!=digest:raise SystemExit('Installed file changed: '+path)
         print('Exact extension already installed; nothing changed.');return

@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse,hashlib,json,os,shutil,subprocess,time
 ROOT=Path(__file__).resolve().parents[1]
-def build(source,jobs,compiler,make):
+def build(source,jobs,compiler,make,openmp=False):
     source=Path(source).resolve();marker=source/'.gneb-extension.json'
     if not marker.exists():raise SystemExit('Run install_extension.py first')
     record=json.loads(marker.read_text())
@@ -17,20 +17,24 @@ def build(source,jobs,compiler,make):
     env=os.environ.copy();env['PATH']=str(Path(cxx).parent)+os.pathsep+str(Path(maker).parent)+os.pathsep+env.get('PATH','')
     # Use only the basename in make's shell command, retaining the configured executable on PATH.
     cmd=[maker,'serial','-j'+str(jobs),'GCC='+Path(cxx).name+' -std=c++11'+(' -DWIN_COMPILE' if os.name=='nt' else ''),
-         'GCC_CFLAGS=-O2 -std=c++11 -D_USE_MATH_DEFINES -I./hdr -I./src/qvoronoi',
-         'GCC_LDFLAGS='+('-static -static-libgcc -static-libstdc++' if os.name=='nt' else '-lstdc++'),
+         'GCC_CFLAGS=-O2 -std=c++11 -D_USE_MATH_DEFINES -I./hdr -I./src/qvoronoi'+(' -fopenmp' if openmp else ''),
+         'GCC_LDFLAGS='+('-static -static-libgcc -static-libstdc++' if os.name=='nt' else '-lstdc++')+(' -fopenmp' if openmp else ''),
          'GHASH='+record['upstream_commit']+'+gneb-'+record['extension_version'],
          'EXECUTABLE='+os.path.relpath(exe,source).replace('\\','/')]
     # Upstream tracks empty object directories; support source archives too.
+    # make does not track changes to command-line flags. Force only the overlay
+    # object to rebuild when changing OpenMP support; upstream stays serial.
+    overlay_object=source/'obj/program/gneb.o'
+    if overlay_object.exists():overlay_object.unlink()
     for directory in (source/'src').rglob('*'):
         if directory.is_dir():(source/'obj'/directory.relative_to(source/'src')).mkdir(parents=True,exist_ok=True)
     log=ROOT/'build/build.log';start=time.monotonic()
     with log.open('wb') as f:r=subprocess.run(cmd,cwd=source,env=env,stdout=f,stderr=subprocess.STDOUT)
     result={'exit_code':r.returncode,'elapsed_s':time.monotonic()-start,'compiler':subprocess.check_output([cxx,'--version'],env=env,text=True).splitlines()[0],
-            'sha256':hashlib.sha256(exe.read_bytes()).hexdigest() if r.returncode==0 else None,'serial_only':True}
+            'sha256':hashlib.sha256(exe.read_bytes()).hexdigest() if r.returncode==0 else None,'mpi':False,'openmp_native_kernel':openmp}
     (ROOT/'build/build-result.json').write_text(json.dumps(result,indent=2)+'\n')
     if r.returncode:
         print('\n'.join(log.read_text(errors='replace').splitlines()[-25:]));raise SystemExit(r.returncode)
     print('Built',exe);print('SHA256',result['sha256'])
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=ROOT/'build/vampire');p.add_argument('--jobs',type=int,default=2);p.add_argument('--compiler',default='g++');p.add_argument('--make',default='make');a=p.parse_args();build(a.source,a.jobs,a.compiler,a.make)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=ROOT/'build/vampire');p.add_argument('--jobs',type=int,default=2);p.add_argument('--compiler',default='g++');p.add_argument('--make',default='make');p.add_argument('--openmp',action='store_true');a=p.parse_args();build(a.source,a.jobs,a.compiler,a.make,a.openmp)

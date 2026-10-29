@@ -18,6 +18,12 @@ double model(const Image&s,Image&force){
     return e;
 }
 int main(){try{
+    Image unrelaxed{unit(Vec(.2,.3,.9))};Options ro;ro.force_tolerance=1e-9;ro.max_iterations=10000;
+    State minimum=relax(unrelaxed,model,ro);
+    require(minimum.converged&&unrelaxed[0].z>1-1e-10,"Free endpoint minimization failed");
+    Image unfinished{unit(Vec(.2,.3,.9))};ro.max_iterations=1;
+    require(!relax(unfinished,model,ro).converged,"Relax iteration limit incorrectly accepted");
+    rejects([&](){Image invalid{Vec(0,0,0)};relax(invalid,model,ro);});
     require(std::abs(distance(Image{Vec(0,0,1)},Image{Vec(1,0,0)})-std::acos(0.))<1e-14,"geodesic distance");
     require(std::abs(distance(Image{Vec(0,0,1)},Image{Vec(0,0,-1)})-std::acos(-1.))<1e-14,"antipodal distance");
     rejects([](){slerp(Vec(0,0,1),Vec(0,0,-1),.5);});

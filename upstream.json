@@ -8,11 +8,11 @@
     "repository": "https://github.com/spirit-code/spirit",
     "commit": "e82250d3b14411c2c2fa292d143f13e3e111ad8c"
   },
-  "extension_version": "0.1.0",
+  "extension_version": "0.2.0",
   "overlay_sha256": {
     "hdr/gneb.hpp": "c09d49f4540fbb66b9d37b75b6f35f41fd9ef02eade7a533534643b89c0c38c2",
-    "src/program/gneb.cpp": "2fd52c63d8b239cfbfb0df47a564bc913e799da4e465592af19509654e41c43c",
-    "src/program/gneb_core.hpp": "866b90d067115aab72bf3ff9f0f2760db0c4bd5fb99daf4a2d3a903d2680340b"
+    "src/program/gneb.cpp": "9ea538006ffaa3b640b43dfd7699d32039c40d0c2d0216ca6049d183753583a1",
+    "src/program/gneb_core.hpp": "cc24fd3c69aae8b069969e568adefdeec84a4d0699eb1092137baeb22bc13851"
   },
   "patch_sha256": "ea1c83eef42df4be882f1eda3998ebd5dc2fdb4df1c25da5c276f9c8245e2587",
   "upstream_base_files": {

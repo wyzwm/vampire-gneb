@@ -22,3 +22,7 @@ jobs:
         run: python3 tools/build.py --source build/vampire --jobs 2
       - name: Run public-only acceptance tests
         run: python3 tests/run_tests.py --exe build/bin/vampire-gneb
+      - name: Build optional OpenMP native kernel
+        run: python3 tools/build.py --source build/vampire --jobs 2 --openmp
+      - name: Verify exact serial and parallel public results
+        run: python3 tests/run_tests.py --exe build/bin/vampire-gneb --openmp-threads 2 --report build/openmp-acceptance.json

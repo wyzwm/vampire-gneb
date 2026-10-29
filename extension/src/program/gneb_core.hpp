@@ -135,6 +135,40 @@ inline void validate_options(const Options&o){
         throw std::runtime_error("Invalid GNEB options");
 }
 
+// Free single-image FIRE minimization. No frozen spins, fields or topology
+// constraints are introduced. Stationarity alone does not certify a minimum.
+inline State relax(Image&image,const Evaluator&eval,const Options&o,const Reporter&report=Reporter()){
+    validate_options(o);validate_image(image);
+    Image velocity(image.size()),force;State r;
+    double step=o.initial_step,mixing=.1;int positive=0;
+    for(int iteration=0;iteration<=o.max_iterations;++iteration){
+        double energy=eval(image,force);
+        if(!std::isfinite(energy)||force.size()!=image.size())throw std::runtime_error("Invalid relaxation evaluator result");
+        for(std::size_t i=0;i<image.size();++i)force[i]=project(force[i],image[i]);
+        r.iteration=iteration;r.max_force=max_norm(force);r.endpoint_max_torque=r.max_force;
+        r.energies.assign(1,energy);r.physical_torque.assign(1,r.max_force);
+        r.converged=r.max_force<o.force_tolerance;
+        if(report&&(iteration%o.report_every==0||r.converged||iteration==o.max_iterations))report(Chain(1,image),r);
+        if(r.converged||iteration==o.max_iterations)break;
+        for(std::size_t i=0;i<image.size();++i)velocity[i]+=force[i]*step;
+        double power=inner(velocity,force);
+        if(power>0){
+            double ratio=field_norm(velocity)/std::max(field_norm(force),1e-300);
+            for(std::size_t i=0;i<image.size();++i)velocity[i]=velocity[i]*(1-mixing)+force[i]*(mixing*ratio);
+            if(++positive>5){step=std::min(step*1.1,o.max_step);mixing*=.99;}
+        }else{
+            for(Vec&v:velocity)v=Vec();
+            step*=.5;positive=0;mixing=.1;
+            if(step<1e-12)throw std::runtime_error("Endpoint FIRE step collapsed before convergence");
+        }
+        double largest=max_norm(velocity)*step,scale=largest>o.max_rotation?o.max_rotation/largest:1.;
+        for(std::size_t i=0;i<image.size();++i){
+            Vec old=image[i];image[i]=exponential(old,velocity[i]*(step*scale));velocity[i]=transport(velocity[i]*scale,old,image[i]);
+        }
+    }
+    validate_image(image);return r;
+}
+
 // FIRE minimization on (S^2)^N. Its step is an optimizer parameter, NOT LLG time.
 inline State optimize(Chain&images,const Evaluator&eval,const Options&o,const Reporter&report=Reporter()){
     validate_options(o);

@@ -12,6 +12,10 @@
 #include "vmpi.hpp"
 #include "../simulate/internal.hpp"
 #include "../exchange/internal.hpp"
+#include "../anisotropy/internal.hpp"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -24,6 +28,7 @@ namespace gneb {
 namespace {
 vgneb::Options options;
 std::string chain_file,output_prefix="gneb",mode="path";
+int threads=1,checkpoint_every=0;
 const double mev_j=1.602176634e-22;
 double normalization_adjustment=0;
 
@@ -37,7 +42,7 @@ std::string trim(std::string s){s=s.substr(0,s.find('#'));std::size_t a=s.find_f
 
 void guard_model(){
 #ifdef MPICF
-    throw std::runtime_error("GNEB v0.1 is serial only. MPI domain/image parallelism has not been implemented or validated.");
+    throw std::runtime_error("GNEB is a single-process program. MPI domain/image parallelism has not been implemented or validated.");
 #endif
     if(sim::temperature!=0)throw std::runtime_error("GNEB requires sim:temperature=0 (no stochastic LLG)");
     if(sim::load_checkpoint_flag)throw std::runtime_error("Supply explicit coordinate-labelled GNEB images; checkpoint loading is unsupported");
@@ -51,6 +56,24 @@ void guard_model(){
         const double mu=mp::material[atoms::type_array[i]].mu_s_SI;
         if(!std::isfinite(mu)||mu<=0)throw std::runtime_error("Invalid magnetic moment");
     }
+    if(threads<1||threads>256)throw std::runtime_error("gneb:threads must be between 1 and 256");
+#ifndef _OPENMP
+    if(threads!=1)throw std::runtime_error("This build has no OpenMP support; rebuild with --openmp or use threads=1");
+#else
+    omp_set_dynamic(0);
+    if(threads>omp_get_num_procs())throw std::runtime_error("Requested threads exceed available CPUs");
+#endif
+    if(threads>1){
+        // The optional parallel native kernel is deliberately limited to the
+        // audited range-local bilinear exchange + K2 + static Zeeman model.
+        using namespace anisotropy::internal;
+        if(enable_uniaxial_fourth_order||enable_biaxial_fourth_order_simple||enable_uniaxial_sixth_order||
+           enable_cubic_fourth_order||enable_cubic_sixth_order||enable_cubic_fourth_order_rotation||
+           enable_fourth_order_rotational||enable_triaxial_anisotropy_rotated||enable_triaxial_fourth_order_rotated||
+           enable_triaxial_anisotropy||enable_triaxial_fourth_order||enable_neel_anisotropy||enable_lattice_anisotropy||enable_random_anisotropy||
+           !exchange::internal::four_spin_neighbour_list_array_l.empty())
+            throw std::runtime_error("OpenMP GNEB supports only bilinear exchange, second-order uniaxial anisotropy and static Zeeman");
+    }
 }
 
 // Reuse the actual initialized VAMPIRE neighbour lists, exchange tensors,
@@ -58,16 +81,29 @@ void guard_model(){
 double evaluate_native(const vgneb::Image&image,vgneb::Image&force){
     if(image.size()!=std::size_t(atoms::num_atoms))throw std::runtime_error("Spin count differs from initialized VAMPIRE geometry");
     for(int i=0;i<atoms::num_atoms;++i){atoms::x_spin_array[i]=image[i].x;atoms::y_spin_array[i]=image[i].y;atoms::z_spin_array[i]=image[i].z;}
+#ifdef _OPENMP
+    #pragma omp parallel num_threads(threads) if(threads>1)
+    {
+        int t=omp_get_thread_num(),n=omp_get_num_threads();
+        sim::calculate_spin_fields(atoms::num_atoms*t/n,atoms::num_atoms*(t+1)/n);
+    }
+#else
     sim::calculate_spin_fields(0,atoms::num_atoms);
-    force.resize(image.size());double energy=0;
+#endif
+    force.resize(image.size());std::vector<double> site_energy(image.size());double energy=0;
+#ifdef _OPENMP
+    #pragma omp parallel for schedule(static) num_threads(threads) if(threads>1)
+#endif
     for(int i=0;i<atoms::num_atoms;++i){
         int mat=atoms::type_array[i];double mu=mp::material[mat].mu_s_SI;
         vgneb::Vec field(sim::H_applied*sim::H_vec[0],sim::H_applied*sim::H_vec[1],sim::H_applied*sim::H_vec[2]);
         field+=vgneb::Vec(mp::material[mat].applied_field_unit_vector[0],mp::material[mat].applied_field_unit_vector[1],mp::material[mat].applied_field_unit_vector[2])*mp::material[mat].applied_field_strength;
-        energy+=mu*(.5*exchange::single_spin_energy(i,image[i].x,image[i].y,image[i].z)
+        site_energy[i]=mu*(.5*exchange::single_spin_energy(i,image[i].x,image[i].y,image[i].z)
                     +anisotropy::single_spin_energy(i,mat,image[i].x,image[i].y,image[i].z,0)-vgneb::dot(image[i],field))/mev_j;
         force[i]=(vgneb::Vec(atoms::x_total_spin_field_array[i],atoms::y_total_spin_field_array[i],atoms::z_total_spin_field_array[i])+field)*(mu/mev_j);
     }
+    // Identical atom-order summation for every thread count (no reduction tree).
+    for(double e:site_energy)energy+=e;
     return energy;
 }
 
@@ -129,13 +165,22 @@ void consistency_gate(const vgneb::Image&image){
 
 void execute(){
     guard_model();vgneb::validate_options(options);
-    if(mode!="path"&&mode!="evaluate")throw std::runtime_error("gneb:mode must be path or evaluate");
+    if(mode!="path"&&mode!="evaluate"&&mode!="relax")throw std::runtime_error("gneb:mode must be path, relax or evaluate");
     if(output_prefix.empty()||output_prefix.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")!=std::string::npos)throw std::runtime_error("GNEB output-prefix must be a simple basename");
     if(exists(output_prefix+"_status.json")||exists(output_prefix+"_energies.csv")||exists(output_prefix+"_history.csv"))throw std::runtime_error("GNEB outputs already exist; use a fresh directory/prefix");
     vgneb::Chain chain=read_chain();consistency_gate(chain.front());
+    if(mode=="relax"&&chain.size()!=1)throw std::runtime_error("Relax mode requires exactly one image");
     std::ofstream history((output_prefix+"_history.csv").c_str());if(!history)throw std::runtime_error("Cannot write GNEB history");
     history<<"iteration,max_GNEB_force_meV,endpoint_torque_meV,climbing_index\n"<<std::setprecision(17);
     vgneb::State state;
+    if(mode=="relax"){
+        state=vgneb::relax(chain.front(),evaluate_native,options,[&](const vgneb::Chain&c,const vgneb::State&s){
+            history<<s.iteration<<','<<s.max_force<<','<<s.endpoint_max_torque<<",-1\n";history.flush();
+            std::cout<<"GNEB relax iteration "<<s.iteration<<" energy "<<std::setprecision(17)<<s.energies[0]<<" max torque "<<s.max_force<<" meV"<<std::endl;
+            if(checkpoint_every>0&&(s.iteration%checkpoint_every==0||s.converged||s.iteration==options.max_iterations))
+                write_image(output_prefix+"_relax_checkpoint_"+std::to_string(s.iteration)+".txt",c.front());
+        });
+    }
     if(mode=="path"){
         state=vgneb::optimize(chain,evaluate_native,options,[&](const vgneb::Chain&,const vgneb::State&s){
             history<<s.iteration<<','<<s.max_force<<','<<s.endpoint_max_torque<<','<<s.climbing_index<<'\n';history.flush();
@@ -154,9 +199,10 @@ void execute(){
     }
     double top=*std::max_element(values.begin(),values.end());
     std::ofstream status((output_prefix+"_status.json").c_str());if(!status)throw std::runtime_error("Cannot write status");
-    status<<std::setprecision(17)<<"{\n  \"implementation\": \"vampire7-gneb-0.1-serial\",\n  \"mode\": \""<<mode<<"\",\n"
+    status<<std::setprecision(17)<<"{\n  \"implementation\": \"vampire7-gneb-0.2\",\n  \"mode\": \""<<mode<<"\",\n"
+          <<"  \"native_kernel_threads\": "<<threads<<",\n"
           <<"  \"images\": "<<chain.size()<<",\n  \"spins_per_image\": "<<chain.front().size()<<",\n"
-          <<"  \"numerically_converged\": "<<(mode=="path"&&state.converged?"true":"false")<<",\n"
+          <<"  \"numerically_converged\": "<<(mode!="evaluate"&&state.converged?"true":"false")<<",\n"
           <<"  \"iterations\": "<<state.iteration<<",\n  \"max_GNEB_force_meV\": "<<state.max_force<<",\n"
           <<"  \"endpoint_torque_meV\": "<<state.endpoint_max_torque<<",\n  \"climbing_image\": "<<state.climbing_index<<",\n"
           <<"  \"path_barrier_evaluated\": "<<(mode=="path"?"true":"false")<<",\n  \"sampled_forward_barrier_meV\": ";
@@ -166,7 +212,7 @@ void execute(){
     status<<",\n  \"maximum_input_norm_adjustment\": "<<normalization_adjustment<<",\n"
           <<"  \"physical_time_integration\": false,\n  \"saddle_index_or_material_stability_certified\": false\n}\n";
     status.close();energies.close();history.close();
-    if(mode=="path"&&!state.converged){std::cerr<<"GNEB reached iteration budget without convergence"<<std::endl;std::exit(2);}
+    if(mode!="evaluate"&&!state.converged){std::cerr<<"GNEB reached iteration budget without convergence"<<std::endl;std::exit(2);}
 }
 } // private
 
@@ -177,6 +223,8 @@ bool match_input_parameter(const std::string&key,const std::string&word,const st
         if(word=="chain-file")chain_file=trim(value);
         else if(word=="output-prefix")output_prefix=trim(value);
         else if(word=="mode")mode=value;
+        else if(word=="threads")threads=integer(value);
+        else if(word=="checkpoint-every")checkpoint_every=integer(value);
         else if(word=="spring-constant")options.spring=number(value);
         else if(word=="force-tolerance")options.force_tolerance=number(value);
         else if(word=="endpoint-tolerance")options.endpoint_tolerance=number(value);

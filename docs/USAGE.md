@@ -52,8 +52,10 @@ python3 tools/convert_snapshot.py --coords atoms-coords.data --spins spins-00000
 
 |参数|默认值|含义|
 |---|---:|---|
-|`gneb:mode`|`path`|`path`优化路径；`evaluate`只评估图像|
+|`gneb:mode`|`path`|`path`优化路径；`relax`自由弛豫单个端点；`evaluate`只评估图像|
 |`gneb:chain-file`|必须提供|链文件|
+|`gneb:threads`|1|OpenMP 原生核线程数；需专门编译，见 ENDPOINTS.md|
+|`gneb:checkpoint-every`|0|relax 模式保存构型的迭代间隔；0关闭|
 |`gneb:output-prefix`|`gneb`|仅字母、数字、下划线、连字符|
 |`gneb:spring-constant`|1|固定弹簧常数，meV/rad²|
 |`gneb:force-tolerance`|1e-5|内部像最大GNEB力，meV/rad|
