@@ -1,0 +1,32 @@
+{
+  "vampire": {
+    "repository": "https://github.com/richard-evans/vampire",
+    "tag": "7.0.0",
+    "commit": "525bc27ee44c525aee229570f30f3d4c61d54f66"
+  },
+  "spirit": {
+    "repository": "https://github.com/spirit-code/spirit",
+    "commit": "e82250d3b14411c2c2fa292d143f13e3e111ad8c"
+  },
+  "extension_version": "0.1.0",
+  "overlay_sha256": {
+    "hdr/gneb.hpp": "c09d49f4540fbb66b9d37b75b6f35f41fd9ef02eade7a533534643b89c0c38c2",
+    "src/program/gneb.cpp": "2fd52c63d8b239cfbfb0df47a564bc913e799da4e465592af19509654e41c43c",
+    "src/program/gneb_core.hpp": "866b90d067115aab72bf3ff9f0f2760db0c4bd5fb99daf4a2d3a903d2680340b"
+  },
+  "patch_sha256": "ea1c83eef42df4be882f1eda3998ebd5dc2fdb4df1c25da5c276f9c8245e2587",
+  "upstream_base_files": {
+    "hdr/vmath.hpp": "9f5403f4ccd6a9d49268f786aef4484708bedac19130825530977cb67f0b84d4",
+    "src/anisotropy/initialize.cpp": "bab231d210d0b2fa735e5d990a4f18b3ab3ad61bdb7b9261a7966eb6fba819c8",
+    "src/program/interface.cpp": "fa2b2a61d4287f3e64672f25ad521261a27258ccd637591e4ed048d43ad9aae6",
+    "src/program/makefile": "c251bc728b09caa263ff4fcb0b1d1a0c359e6697c2062cc4dc7f64754b3f18a8",
+    "src/qvoronoi/mem.hpp": "315f8e73eb3517c4566d896d7fa14917eeec269d398f25a47d4c88567853323a",
+    "src/simulate/sim.cpp": "b1dd1b90a9c32c03dd6d334ee80a35de71629537d00aba9fec5fcc8e00843551",
+    "src/vio/match.cpp": "b960b35c72ec87f197cd398c65ec8f5697844cc5859bc899d67d5c367f11110f"
+  },
+  "reference_sha256": {
+    "references/spirit/fd_pairs.cfg": "b7797b4be4f3402d1bc832345e63ac0cd85e3d9f275021c81a4d3ffed65a455c",
+    "references/spirit/solvers.cfg": "ef6d2ffa9acf74e0c2c00f24baadbcde419bada73c9b009cf982f542d4b6ef3b",
+    "references/spirit/test_solvers.cpp": "600ae599d8ebbdc166f43613bc419c61fe08b60300b75f189daf0fdc2aa188da"
+  }
+}

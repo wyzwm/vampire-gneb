@@ -1,0 +1,18 @@
+/build/
+/runs/
+__pycache__/
+*.pyc
+*.o
+*.exe
+*.dll
+*.so
+*.a
+*.log
+.DS_Store
+/.venv/
+# Generated solver outputs belong in fresh runs/, not in the example inputs.
+gneb_history.csv
+gneb_energies.csv
+gneb_status.json
+gneb_image_*.txt
+gneb_force_*.tsv

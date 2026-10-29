@@ -1,0 +1,51 @@
+{
+  "source_repository": "https://github.com/spirit-code/spirit",
+  "source_commit": "e82250d3b14411c2c2fa292d143f13e3e111ad8c",
+  "source_files": [
+    "core/test/test_solvers.cpp",
+    "core/test/input/solvers.cfg",
+    "core/src/utility/Configurations.cpp"
+  ],
+  "source_parameters": {
+    "grid": [
+      16,
+      16,
+      1
+    ],
+    "boundary_conditions": [
+      1,
+      1,
+      0
+    ],
+    "J_meV": 10,
+    "D_meV": 6,
+    "D_chirality": "Bloch +1",
+    "mu_muB": 2,
+    "Bz_T": 25,
+    "K_meV": 0,
+    "images": 9,
+    "initial_skyrmion_radius": 5,
+    "initial_phase_degrees": -90
+  },
+  "reference_minimum_energy_meV": -5849.69140625,
+  "reference_saddle_energy_meV": -5811.5244140625,
+  "reference_forward_barrier_meV": 38.1669921875,
+  "absolute_energy_tolerance_meV": 0.0003,
+  "tolerance_reason": "Published test values are float32; accounts for their print/representation rounding and documented Bohr-magneton constant difference.",
+  "spin_images": "Independently generated from the public model and configuration recipe, not downloaded reference trajectories.",
+  "files": {
+    "chain.txt": "1344038879764a2ce7e74d541c4dd08353539a0a5215d1f59646b83e29d4041b",
+    "Co.mat": "325fb40e414d5cb1937950c5fa62373a09b531bb9853b5ab0ae29801665ec2fa",
+    "file.ucf": "2daaf816a29e7e1755cc76b194a3a163bf138c1b6d626c6dbe9730bd0750c44f",
+    "image_0.txt": "0b4a081643400883f5400f918bd8006bb3085347a28a1843b2a3ac6063d700ae",
+    "image_1.txt": "ab4c7d8bd653272bc70e05493522f610710047e064d9e7673fcfa604d5caf1d3",
+    "image_2.txt": "014a351911263cbf89074c732e0b8d501671f3f58d35f31a1b6ed472bc05308a",
+    "image_3.txt": "6099b0bf83e51b7cadf5794c1f6a969a11054f3b83efc2ccf1e6e52ddf112ceb",
+    "image_4.txt": "f57329aab27cd135ce36d55110ef26bfecd6433e737685c0b8e24a86c7e57b53",
+    "image_5.txt": "788b9e689e1d16faac59ab930a00e219f6f4f62b45a4e8de56ec97ae2f16046b",
+    "image_6.txt": "132a32c20f9f079b8bf5a0c5175a59919a1a2c50045e08305d9dbec6b93fb49e",
+    "image_7.txt": "0014f97135b501cfdc93054982364b0b779568f163175b64693e4eab59413152",
+    "image_8.txt": "dec1d24caf5fa722099134ed530f74619c538c05c0565c44cae400a23e9c79bf",
+    "input": "40fac9ad6d77c0c9bef2946b6a0a453cb5aa518797816a9f9efe2713d1f901fa"
+  }
+}

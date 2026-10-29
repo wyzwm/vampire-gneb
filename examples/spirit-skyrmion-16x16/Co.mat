@@ -1,0 +1,8 @@
+# Generic public square-lattice spin model, not a material parameterization.
+material:num-materials=1
+material[1]:material-name=PublicBenchmarkSpin
+material[1]:damping-constant=1
+material[1]:initial-spin-direction=0,0,1
+material[1]:atomic-spin-moment=2!muB
+material[1]:uniaxial-anisotropy-constant=0
+material[1]:uniaxial-anisotropy-direction=0,0,1

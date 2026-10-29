@@ -1,0 +1,26 @@
+# Spirit official 16x16 skyrmion-collapse benchmark, serial GNEB.
+create:crystal-structure=sc
+create:periodic-boundaries-x
+create:periodic-boundaries-y
+create:spin-initialisation-random-seed=22
+dimensions:system-size-x=1.6!nm
+dimensions:system-size-y=1.6!nm
+dimensions:system-size-z=0.1!nm
+material:file=Co.mat
+material:unit-cell-file=file.ucf
+sim:program=gneb
+sim:integrator=llg-heun
+sim:temperature=0
+sim:applied-field-strength=25!T
+sim:applied-field-unit-vector=0,0,1
+gneb:mode=path
+gneb:chain-file=chain.txt
+gneb:output-prefix=gneb
+gneb:spring-constant=1
+gneb:force-tolerance=1e-6
+gneb:endpoint-tolerance=1e-6
+gneb:max-iterations=200000
+gneb:climb-after=2000
+gneb:initial-step=0.005
+gneb:maximum-step=0.05
+gneb:report-every=500

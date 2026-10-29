@@ -1,0 +1,96 @@
+{
+  "utc": "2026-10-29T03:14:22.936935+00:00",
+  "all_passed": true,
+  "data_scope": "Only public Spirit benchmark and explicitly defined analytic unit tests",
+  "public_benchmarks": [
+    {
+      "public_source_commit": "e82250d3b14411c2c2fa292d143f13e3e111ad8c",
+      "images": 9,
+      "spins_per_image": 256,
+      "minimum_energy_meV": -5849.691422795185,
+      "saddle_energy_meV": -5811.524453340668,
+      "forward_barrier_meV": 38.16696945451713,
+      "reference_minimum_energy_meV": -5849.69140625,
+      "reference_saddle_energy_meV": -5811.5244140625,
+      "reference_forward_barrier_meV": 38.1669921875,
+      "absolute_energy_tolerance_meV": 0.0003,
+      "maximum_force_meV_per_radian": 9.816169138896674e-07,
+      "iterations": 906,
+      "saddle_magnetization_z_muB_per_spin": 1.9331458655483102,
+      "reference_saddle_magnetization_z_muB_per_spin": 1.93314,
+      "energy_and_force_checks_passed": true
+    },
+    {
+      "public_source_commit": "e82250d3b14411c2c2fa292d143f13e3e111ad8c",
+      "images": 17,
+      "spins_per_image": 256,
+      "minimum_energy_meV": -5849.691422795185,
+      "saddle_energy_meV": -5811.524453340672,
+      "forward_barrier_meV": 38.16696945451258,
+      "reference_minimum_energy_meV": -5849.69140625,
+      "reference_saddle_energy_meV": -5811.5244140625,
+      "reference_forward_barrier_meV": 38.1669921875,
+      "absolute_energy_tolerance_meV": 0.0003,
+      "maximum_force_meV_per_radian": 9.899475055358647e-07,
+      "iterations": 1469,
+      "saddle_magnetization_z_muB_per_spin": 1.9331458687850476,
+      "reference_saddle_magnetization_z_muB_per_spin": 1.93314,
+      "energy_and_force_checks_passed": true
+    }
+  ],
+  "core_test_passed": true,
+  "negative_tests": [
+    {
+      "case": "nonzero_temperature",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "unrelaxed_endpoint",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "duplicate_image",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "antipodal_neighbour",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "wrong_coordinates",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "nonunit_spin",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    },
+    {
+      "case": "iteration_budget",
+      "expected_exit": 2,
+      "actual_exit": 2,
+      "pass": true
+    },
+    {
+      "case": "output_overwrite",
+      "expected_exit": 1,
+      "actual_exit": 1,
+      "pass": true
+    }
+  ],
+  "coordinate_permutation_passed": true,
+  "executable_sha256": "89d4256d6830de833cc97fff06fb892baabc7bff246fb392eb0ab34e9704af71",
+  "platform": "nt",
+  "compiler": "g++.exe (GCC) 16.2.0"
+}

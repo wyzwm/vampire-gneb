@@ -1,0 +1,24 @@
+name: public-benchmark
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Fetch pinned upstream
+        run: python3 tools/fetch_vampire.py
+      - name: Install extension
+        run: python3 tools/install_extension.py --source build/vampire
+      - name: Build serial executable
+        run: python3 tools/build.py --source build/vampire --jobs 2
+      - name: Run public-only acceptance tests
+        run: python3 tests/run_tests.py --exe build/bin/vampire-gneb

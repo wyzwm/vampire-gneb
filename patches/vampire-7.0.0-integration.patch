@@ -1,0 +1,120 @@
+diff --git a/hdr/vmath.hpp b/hdr/vmath.hpp
+index e282cd6..d19b75d 100644
+--- a/hdr/vmath.hpp
++++ b/hdr/vmath.hpp
+@@ -12,6 +12,7 @@
+ 
+ #include <vector>
+ #include <cmath>
++#include <cstdint>
+ 
+ /// @namespace ns
+ /// @brief vmath namespace containing sundry math functions for vampire.
+diff --git a/src/anisotropy/initialize.cpp b/src/anisotropy/initialize.cpp
+index 88b0b21..6261c05 100644
+--- a/src/anisotropy/initialize.cpp
++++ b/src/anisotropy/initialize.cpp
+@@ -35,10 +35,10 @@ namespace anisotropy{
+       //---------------------------------------------------------------------
+       // get number of materials for simulation
+       //---------------------------------------------------------------------
+-      int init_num_materials = internal::mp.size();
+-
+-      // if no anisotropy constants initialised, then make sure anisotropy array is the correct size
+-      if(init_num_materials == 0) internal::mp.resize(mu_s_array.size());
++      // Input parsing reserves up to 100 material slots, whereas mu_s_array
++      // contains only the declared materials. Never read unused slots past it.
++      // This is a bounds correction; configured anisotropy values are retained.
++      internal::mp.resize(mu_s_array.size());
+ 
+       // set actual number of materials
+       const int num_materials = internal::mp.size();
+diff --git a/src/program/interface.cpp b/src/program/interface.cpp
+index b89aae7..79feac2 100644
+--- a/src/program/interface.cpp
++++ b/src/program/interface.cpp
+@@ -35,6 +35,10 @@ namespace program{
+       //-------------------------------------------------------------------
+       std::string test="program";
+       if(word==test){
++         if(value=="gneb"){
++            program::program=80;
++            return true;
++         }
+          test="benchmark";
+          if(value==test){
+             program::program=0;
+diff --git a/src/program/makefile b/src/program/makefile
+index e420945..d0d5d50 100644
+--- a/src/program/makefile
++++ b/src/program/makefile
+@@ -5,6 +5,7 @@
+ # List module object filenames
+ program_objects =\
+ benchmark.o \
++gneb.o \
+ cmc_anisotropy.o \
+ curie_temperature.o \
+ data.o \
+@@ -35,3 +36,6 @@ temperature_pulse.o
+ 
+ # Append module objects to global tree
+ OBJECTS+=$(addprefix obj/program/,$(program_objects))
++
++# The experimental GNEB kernel is header-only; keep incremental builds correct.
++obj/program/gneb.o: src/program/gneb_core.hpp hdr/gneb.hpp
+diff --git a/src/qvoronoi/mem.hpp b/src/qvoronoi/mem.hpp
+index ad89de8..49714ab 100644
+--- a/src/qvoronoi/mem.hpp
++++ b/src/qvoronoi/mem.hpp
+@@ -78,7 +78,7 @@ Trace short and quick memory allocations at T5
+     Qhull uses int instead of size_t except for system calls such as malloc, qsort, qh_malloc, etc.
+     This matches Qt convention and is easier to work with.  
+ */
+-#if _MSC_VER && defined(_WIN64)
++#if defined(_WIN64)
+ typedef long long ptr_intT;
+ #else
+ typedef long ptr_intT;
+diff --git a/src/simulate/sim.cpp b/src/simulate/sim.cpp
+index 506a09a..82fcd1c 100644
+--- a/src/simulate/sim.cpp
++++ b/src/simulate/sim.cpp
+@@ -47,6 +47,7 @@
+ #include "anisotropy.hpp"
+ #include "atoms.hpp"
+ #include "program.hpp"
++#include "gneb.hpp"
+ #include "cells.hpp"
+ #include "../cells/internal.hpp"
+ #include "../micromagnetic/internal.hpp"
+@@ -326,6 +327,9 @@ int run(){
+ 
+ 	// Select program to run
+ 	switch(program::program){
++		case 80:
++			gneb::run();
++			break;
+ 		case 0:
+ 			if(vmpi::my_rank==0){
+ 				std::cout << "Benchmark..." << std::endl;
+diff --git a/src/vio/match.cpp b/src/vio/match.cpp
+index a412d2d..3e0e8d8 100644
+--- a/src/vio/match.cpp
++++ b/src/vio/match.cpp
+@@ -36,6 +36,7 @@
+ #include "ltmp.hpp"
+ #include "montecarlo.hpp"
+ #include "program.hpp"
++#include "gneb.hpp"
+ #include "random.hpp"
+ #include "spintorque.hpp"
+ #include "spintransport.hpp"
+@@ -83,6 +84,7 @@ namespace vin{
+         else if(gpu::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
+         else if(exchange::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
+         else if(montecarlo::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
++        else if(gneb::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
+         else if(program::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
+         else if(sim::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
+         else if(st::match_input_parameter(key, word, value, unit, line)) return EXIT_SUCCESS;
